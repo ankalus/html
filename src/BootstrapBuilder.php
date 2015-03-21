@@ -4,88 +4,11 @@ use DateTime;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Session\Store as Session;
 use Illuminate\Support\Traits\Macroable;
+use Collective\Html\FormBuilder as FormBuilder;
 
 class BootstrapBuilder extends FormBuilder {
 
 	use Macroable;
-
-	/**
-	 * The HTML builder instance.
-	 *
-	 * @var \Collective\Html\HtmlBuilder
-	 */
-	protected $html;
-
-	/**
-	 * The URL generator instance.
-	 *
-	 * @var \Illuminate\Routing\UrlGenerator  $url
-	 */
-	protected $url;
-
-	/**
-	 * The CSRF token used by the form builder.
-	 *
-	 * @var string
-	 */
-	protected $csrfToken;
-
-	/**
-	 * The session store implementation.
-	 *
-	 * @var \Illuminate\Session\Store
-	 */
-	protected $session;
-
-	/**
-	 * The current model instance for the form.
-	 *
-	 * @var mixed
-	 */
-	protected $model;
-
-	/**
-	 * An array of label names we've created.
-	 *
-	 * @var array
-	 */
-	protected $labels = array();
-
-	/**
-	 * The reserved form open attributes.
-	 *
-	 * @var array
-	 */
-	protected $reserved = array('method', 'url', 'route', 'action', 'files');
-
-	/**
-	 * The form methods that should be spoofed, in uppercase.
-	 *
-	 * @var array
-	 */
-	protected $spoofedMethods = array('DELETE', 'PATCH', 'PUT');
-
-	/**
-	 * The types of inputs to not fill values on by default.
-	 *
-	 * @var array
-	 */
-	protected $skipValueTypes = array('file', 'password', 'checkbox', 'radio');
-
-	/**
-	 * Create a new form builder instance.
-	 *
-	 * @param  \Illuminate\Routing\UrlGenerator  $url
-	 * @param  \Collective\Html\HtmlBuilder  $html
-	 * @param  string  $csrfToken
-	 * @return void
-	 */
-	public function __construct(HtmlBuilder $html, UrlGenerator $url, $csrfToken)
-	{
-		$this->url = $url;
-		$this->html = $html;
-		$this->csrfToken = $csrfToken;
-	}
 
 	/**
 	 * Open up a new HTML form.
@@ -97,6 +20,8 @@ class BootstrapBuilder extends FormBuilder {
 	{
 		$method = array_get($options, 'method', 'post');
 
+		$form_type = array_get($options, 'formType', NULL);
+
 		// We need to extract the proper method from the attributes. If the method is
 		// something other than GET or POST we'll use POST since we will spoof the
 		// actual method since forms don't support the reserved methods in HTML.
@@ -105,6 +30,8 @@ class BootstrapBuilder extends FormBuilder {
 		$attributes['action'] = $this->getAction($options);
 
 		$attributes['accept-charset'] = 'UTF-8';
+		
+		$attributes['class'] = $this->getFormType($form_type);
 
 		// If the method is PUT, PATCH or DELETE we will need to add a spoofer hidden
 		// field that will instruct the Symfony request to pretend the method is a
@@ -134,28 +61,23 @@ class BootstrapBuilder extends FormBuilder {
 	}
 
 	/**
-	 * Create a new model based form builder.
-	 *
-	 * @param  mixed  $model
-	 * @param  array  $options
+	 *	Get bootstrap form type.
+	 * 
+	 * @param  string
 	 * @return string
 	 */
-	public function model($model, array $options = array())
+	protected function getFormType($type = NULL)
 	{
-		$this->model = $model;
-
-		return $this->open($options);
-	}
-
-	/**
-	 * Set the model instance on the form builder.
-	 *
-	 * @param  mixed  $model
-	 * @return void
-	 */
-	public function setModel($model)
-	{
-		$this->model = $model;
+		switch ($type) {
+			case 'horizontal':
+				return "form-horizontal";
+				
+			case 'inline':
+				return "form-inline";
+			
+			default:
+				return NULL;
+		}
 	}
 
 	/**
@@ -694,16 +616,6 @@ class BootstrapBuilder extends FormBuilder {
 		return $this->getValueAttribute($name) == $value;
 	}
 
-	/**
-	 * Determine if old input or model input exists for a key.
-	 *
-	 * @param  string  $name
-	 * @return bool
-	 */
-	protected function missingOldAndModel($name)
-	{
-		return (is_null($this->old($name)) && is_null($this->getModelValueAttribute($name)));
-	}
 
 	/**
 	 * Create a HTML reset input element.
@@ -759,51 +671,6 @@ class BootstrapBuilder extends FormBuilder {
 		}
 
 		return '<button'.$this->html->attributes($options).'>'.$value.'</button>';
-	}
-
-	/**
-	 * Parse the form action method.
-	 *
-	 * @param  string  $method
-	 * @return string
-	 */
-	protected function getMethod($method)
-	{
-		$method = strtoupper($method);
-
-		return $method != 'GET' ? 'POST' : $method;
-	}
-
-	/**
-	 * Get the form action from the options.
-	 *
-	 * @param  array   $options
-	 * @return string
-	 */
-	protected function getAction(array $options)
-	{
-		// We will also check for a "route" or "action" parameter on the array so that
-		// developers can easily specify a route or controller action when creating
-		// a form providing a convenient interface for creating the form actions.
-		if (isset($options['url']))
-		{
-			return $this->getUrlAction($options['url']);
-		}
-
-		if (isset($options['route']))
-		{
-			return $this->getRouteAction($options['route']);
-		}
-
-		// If an action is available, we are attempting to open a form to a controller
-		// action route. So, we will use the URL generator to get the path to these
-		// actions and return them from the method. Otherwise, we'll use current.
-		elseif (isset($options['action']))
-		{
-			return $this->getControllerAction($options['action']);
-		}
-
-		return $this->url->current();
 	}
 
 	/**
@@ -884,92 +751,6 @@ class BootstrapBuilder extends FormBuilder {
 	}
 
 	/**
-	 * Get the ID attribute for a field name.
-	 *
-	 * @param  string  $name
-	 * @param  array   $attributes
-	 * @return string
-	 */
-	public function getIdAttribute($name, $attributes)
-	{
-		if (array_key_exists('id', $attributes))
-		{
-			return $attributes['id'];
-		}
-
-		if (in_array($name, $this->labels))
-		{
-			return $name;
-		}
-	}
-
-	/**
-	 * Get the value that should be assigned to the field.
-	 *
-	 * @param  string  $name
-	 * @param  string  $value
-	 * @return string
-	 */
-	public function getValueAttribute($name, $value = null)
-	{
-		if (is_null($name)) return $value;
-
-		if ( ! is_null($this->old($name)))
-		{
-			return $this->old($name);
-		}
-
-		if ( ! is_null($value)) return $value;
-
-		if (isset($this->model))
-		{
-			return $this->getModelValueAttribute($name);
-		}
-	}
-
-	/**
-	 * Get the model value that should be assigned to the field.
-	 *
-	 * @param  string  $name
-	 * @return string
-	 */
-	protected function getModelValueAttribute($name)
-	{
-		if (is_object($this->model))
-		{
-			return object_get($this->model, $this->transformKey($name));
-		}
-		elseif (is_array($this->model))
-		{
-			return array_get($this->model, $this->transformKey($name));
-		}
-	}
-
-	/**
-	 * Get a value from the session's old input.
-	 *
-	 * @param  string  $name
-	 * @return string
-	 */
-	public function old($name)
-	{
-		if (isset($this->session))
-		{
-			return $this->session->getOldInput($this->transformKey($name));
-		}
-	}
-
-	/**
-	 * Determine if the old input is empty.
-	 *
-	 * @return bool
-	 */
-	public function oldInputIsEmpty()
-	{
-		return (isset($this->session) && count($this->session->getOldInput()) == 0);
-	}
-
-	/**
 	 * Transform key from array to dot syntax.
 	 *
 	 * @param  string  $key
@@ -978,29 +759,6 @@ class BootstrapBuilder extends FormBuilder {
 	protected function transformKey($key)
 	{
 		return str_replace(array('.', '[]', '[', ']'), array('_', '', '.', ''), $key);
-	}
-
-	/**
-	 * Get the session store implementation.
-	 *
-	 * @return  \Illuminate\Session\Store  $session
-	 */
-	public function getSessionStore()
-	{
-		return $this->session;
-	}
-
-	/**
-	 * Set the session store implementation.
-	 *
-	 * @param  \Illuminate\Session\Store  $session
-	 * @return $this
-	 */
-	public function setSessionStore(Session $session)
-	{
-		$this->session = $session;
-
-		return $this;
 	}
 
 }
