@@ -4,11 +4,15 @@ use DateTime;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Session\Store as Session;
 use Illuminate\Support\Traits\Macroable;
-use Collective\Html\FormBuilder as FormBuilder;
 
 class BootstrapBuilder extends FormBuilder {
 
-	use Macroable;
+	/**
+	 * 	Bootstrap form type.
+	 *  
+	 * @var string
+	 */
+	protected $formType;
 
 	/**
 	 * Open up a new HTML form.
@@ -22,6 +26,8 @@ class BootstrapBuilder extends FormBuilder {
 
 		$form_type = array_get($options, 'formType', NULL);
 
+		unset($options['formType']);
+
 		// We need to extract the proper method from the attributes. If the method is
 		// something other than GET or POST we'll use POST since we will spoof the
 		// actual method since forms don't support the reserved methods in HTML.
@@ -31,7 +37,7 @@ class BootstrapBuilder extends FormBuilder {
 
 		$attributes['accept-charset'] = 'UTF-8';
 		
-		$attributes['class'] = $this->getFormType($form_type);
+		$attributes['class'] = $this->formType = $this->getFormType($form_type);
 
 		// If the method is PUT, PATCH or DELETE we will need to add a spoofer hidden
 		// field that will instruct the Symfony request to pretend the method is a
@@ -58,6 +64,15 @@ class BootstrapBuilder extends FormBuilder {
 		$attributes = $this->html->attributes($attributes);
 
 		return '<form'.$attributes.'>'.$append;
+	}
+
+	public function openHorizontal(array $options = array()){
+		$this->open($options);
+	}
+
+
+	public function openInline(array $options = array()){
+		$this->open($options);
 	}
 
 	/**
@@ -118,11 +133,39 @@ class BootstrapBuilder extends FormBuilder {
 	{
 		$this->labels[] = $name;
 
+		switch ($this->formType) {
+			case 'form-horizontal':
+				if (array_key_exists('class', $options)) {
+					$options['class'] = "col-sm-2 control-label " . $options['class'];
+				}else{
+					$options['class'] = "col-sm-2 control-label";
+				}
+		}
+
 		$options = $this->html->attributes($options);
 
 		$value = e($this->formatLabel($name, $value));
 
 		return '<label for="'.$name.'"'.$options.'>'.$value.'</label>';
+	}
+
+	/**
+	 * Create a form label for checkable element.
+	 *
+	 * @param  string  $name
+	 * @param  string  $value
+	 * @param  array   $options
+	 * @return string
+	 */
+	public function labelCheckable($name, $value = null, $options = array())
+	{
+		$this->labels[] = $name;
+
+		$options = $this->html->attributes($options);
+
+		$value = e($this->formatLabel($name, $value));
+
+		return $value;
 	}
 
 	/**
@@ -170,6 +213,106 @@ class BootstrapBuilder extends FormBuilder {
 		return '<input'.$this->html->attributes($options).'>';
 	}
 
+	protected function formControl($options = array())
+	{
+		if (array_key_exists('class', $options)) {
+			$options['class'] = "form-control " . $options['class'];
+		}else{
+			$options['class'] = "form-control";
+		}
+		return $options;
+	}
+
+	protected function formGroup($options = array())
+	{
+		if (array_key_exists('class', $options)) {
+			$options['class'] = "form-group " . $options['class'];
+		}else{
+			$options['class'] = "form-group";
+		}
+		return $options;
+	}
+
+	public function beginFormGroup($options = array())
+	{
+		$options = $this->formGroup($options);
+		$options = $this->html->attributes($options);
+		return '<div '.$options.'>';
+	}
+
+	public function endFormGroup()
+	{
+		return '</div>';
+	}
+
+	public function beginHorizontalGroup($margin = false)
+	{
+		if ($margin) {
+			return '<div class="col-sm-offset-2 col-sm-10">';
+		}
+		return '<div class="col-sm-10">';
+	}
+
+	public function endHorizontalGroup()
+	{
+		return '</div>';
+	}
+
+	protected function formBox($type, $name, $value = null, $options = array())
+	{
+		$label = $this->label($name, $this->labelGen($name, $options), $options);
+
+		switch ($type) {
+			case 'select':			
+			case 'checkbox':			
+			case 'radio':			
+			case 'textarea':			
+				$input = $value;
+				break;
+			default:
+				$inputOptions = $this->formControl($options);
+				$input =  $this->input($type , $name, $value, $inputOptions);
+				break;
+		}
+
+		switch ($this->formType) {
+			case 'form-horizontal':
+				$html  = $this->beginFormGroup();
+				$html .= $label;
+				$html .= $this->beginHorizontalGroup();
+				$html .= $input;
+				$html .= $this->endFormGroup(). $this->endHorizontalGroup();
+				return $html;
+			
+			default:
+				$html  = $this->beginFormGroup();
+				$html .= $label;
+				$html .= $input;
+				$html .= $this->endFormGroup();
+				return $html;
+		}
+	}
+
+	protected function labelGen($name, $options)
+	{
+		if (isset($options['label'])) {
+			return $options['label'];
+		}
+		
+		if (!is_null($this->model)) {
+			$classNameWithNamespace = get_class($this->model);
+		    $className =  snake_case( str_replace("\\", '', $classNameWithNamespace) );
+		    
+		    //example to translate from model Html/Bootstrap: models.html_bootstrap.text
+		    $trans = trans('models.' . $className . '.' . $name);
+
+			if ($trans != 'models.' . $className . '.' . $name) {
+				return $trans;
+			}
+		}
+		return null;
+	}
+
 	/**
 	 * Create a text input field.
 	 *
@@ -180,7 +323,7 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function text($name, $value = null, $options = array())
 	{
-		return $this->input('text', $name, $value, $options);
+		return $this->formBox('text' ,$name, $value, $options);
 	}
 
 	/**
@@ -192,7 +335,7 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function password($name, $options = array())
 	{
-		return $this->input('password', $name, '', $options);
+		return $this->formBox('password' ,$name, '', $options);
 	}
 
 	/**
@@ -218,7 +361,7 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function email($name, $value = null, $options = array())
 	{
-		return $this->input('email', $name, $value, $options);
+		return $this->formBox('email' ,$name, $value, $options);
 	}
 
 	/**
@@ -231,7 +374,7 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function number($name, $value = null, $options = array())
 	{
-		return $this->input('number', $name, $value, $options);
+		return $this->formBox('number' ,$name, $value, $options);
 	}
 
 	/**
@@ -244,12 +387,13 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function date($name, $value = null, $options = array())
 	{
+		
 		if ($value instanceof DateTime)
 		{
 			$value = $value->format('Y-m-d');
 		}
 
-		return $this->input('date', $name, $value, $options);
+		return $this->formBox('date' ,$name, $value, $options);
 	}
 
 	/**
@@ -262,7 +406,7 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function url($name, $value = null, $options = array())
 	{
-		return $this->input('url', $name, $value, $options);
+		return $this->formBox('url' ,$name, $value, $options);
 	}
 
 	/**
@@ -274,7 +418,7 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function file($name, $options = array())
 	{
-		return $this->input('file', $name, null, $options);
+		return $this->formBox('file' ,$name, $value, $options);
 	}
 
 	/**
@@ -287,6 +431,7 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function textarea($name, $value = null, $options = array())
 	{
+		$formBoxOptions = $options;
 		if ( ! isset($options['name'])) $options['name'] = $name;
 
 		// Next we will look for the rows and cols attributes, as each of these are put
@@ -305,7 +450,8 @@ class BootstrapBuilder extends FormBuilder {
 		// the element. Then we'll create the final textarea elements HTML for us.
 		$options = $this->html->attributes($options);
 
-		return '<textarea'.$options.'>'.e($value).'</textarea>';
+		$textarea = '<textarea'.$options.'>'.e($value).'</textarea>';
+		return $this->formBox('textarea' ,$name, $textarea, $formBoxOptions);
 	}
 
 	/**
@@ -355,16 +501,18 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function select($name, $list = array(), $selected = null, $options = array())
 	{
+		$optionsSelect = $this->formControl($options);
+
 		// When building a select box the "value" attribute is really the selected one
 		// so we will use that when checking the model or session for a value which
 		// should provide a convenient method of re-populating the forms on post.
 		$selected = $this->getValueAttribute($name, $selected);
 
-		$options['id'] = $this->getIdAttribute($name, $options);
+		$optionsSelect['id'] = $this->getIdAttribute($name, $optionsSelect);
 
-		if ( ! isset($options['name'])) $options['name'] = $name;
+		if ( ! isset($optionsSelect['name'])) $optionsSelect['name'] = $name;
 
-		// We will simply loop through the options and build an HTML value for each of
+		// We will simply loop through the optionsSelect and build an HTML value for each of
 		// them until we have an array of HTML declarations. Then we will join them
 		// all together into one single HTML element that can be put on the form.
 		$html = array();
@@ -377,82 +525,12 @@ class BootstrapBuilder extends FormBuilder {
 		// Once we have all of this HTML, we can join this into a single element after
 		// formatting the attributes into an HTML "attributes" string, then we will
 		// build out a final select statement, which will contain all the values.
-		$options = $this->html->attributes($options);
+		$optionsSelect = $this->html->attributes($optionsSelect);
 
 		$list = implode('', $html);
 
-		return "<select{$options}>{$list}</select>";
-	}
-
-	/**
-	 * Create a select range field.
-	 *
-	 * @param  string  $name
-	 * @param  string  $begin
-	 * @param  string  $end
-	 * @param  string  $selected
-	 * @param  array   $options
-	 * @return string
-	 */
-	public function selectRange($name, $begin, $end, $selected = null, $options = array())
-	{
-		$range = array_combine($range = range($begin, $end), $range);
-
-		return $this->select($name, $range, $selected, $options);
-	}
-
-	/**
-	 * Create a select year field.
-	 *
-	 * @param  string  $name
-	 * @param  string  $begin
-	 * @param  string  $end
-	 * @param  string  $selected
-	 * @param  array   $options
-	 * @return string
-	 */
-	public function selectYear()
-	{
-		return call_user_func_array(array($this, 'selectRange'), func_get_args());
-	}
-
-	/**
-	 * Create a select month field.
-	 *
-	 * @param  string  $name
-	 * @param  string  $selected
-	 * @param  array   $options
-	 * @param  string  $format
-	 * @return string
-	 */
-	public function selectMonth($name, $selected = null, $options = array(), $format = '%B')
-	{
-		$months = array();
-
-		foreach (range(1, 12) as $month)
-		{
-			$months[$month] = strftime($format, mktime(0, 0, 0, $month, 1));
-		}
-
-		return $this->select($name, $months, $selected, $options);
-	}
-
-	/**
-	 * Get the select option for the given value.
-	 *
-	 * @param  string  $display
-	 * @param  string  $value
-	 * @param  string  $selected
-	 * @return string
-	 */
-	public function getSelectOption($display, $value, $selected)
-	{
-		if (is_array($display))
-		{
-			return $this->optionGroup($display, $value, $selected);
-		}
-
-		return $this->option($display, $value, $selected);
+		$select = "<select{$optionsSelect}>{$list}</select>";
+		return $this->formBox('select' ,$name, $select, $options);
 	}
 
 	/**
@@ -490,23 +568,6 @@ class BootstrapBuilder extends FormBuilder {
 		$options = array('value' => e($value), 'selected' => $selected);
 
 		return '<option'.$this->html->attributes($options).'>'.e($display).'</option>';
-	}
-
-	/**
-	 * Determine if the value is selected.
-	 *
-	 * @param  string  $value
-	 * @param  string  $selected
-	 * @return string
-	 */
-	protected function getSelectedValue($value, $selected)
-	{
-		if (is_array($selected))
-		{
-			return in_array($value, $selected) ? 'selected' : null;
-		}
-
-		return ((string) $value == (string) $selected) ? 'selected' : null;
 	}
 
 	/**
@@ -551,71 +612,46 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	protected function checkable($type, $name, $value, $checked, $options)
 	{
+		$disabled = '';
+		if (array_key_exists('disabled',$options) && $options['disabled'] == 'disabled') {
+			$disabled = ' disabled';
+		}
+
+		$label = $this->labelCheckable($name, $this->labelGen($name, $options), $options);
+
 		$checked = $this->getCheckedState($type, $name, $value, $checked);
 
 		if ($checked) $options['checked'] = 'checked';
 
-		return $this->input($type, $name, $value, $options);
-	}
+		if (array_key_exists('display',$options) && $options['display'] == 'inline') {
+			$inline = '-inline';
+			unset($options['display']);
+		}else{
+			$inline = '';
+		}
+		
+		$html = '<div class="' .$type.$inline.$disabled. '">';
+		$html .= '<label>';
+		$html .= $this->input($type, $name, $value, $options);
+		$html .= $label;
+		$html .= '</label>';
+		$html .= '</div>';
 
-	/**
-	 * Get the check state for a checkable input.
-	 *
-	 * @param  string  $type
-	 * @param  string  $name
-	 * @param  mixed   $value
-	 * @param  bool    $checked
-	 * @return bool
-	 */
-	protected function getCheckedState($type, $name, $value, $checked)
-	{
-		switch ($type)
-		{
-			case 'checkbox':
-				return $this->getCheckboxCheckedState($name, $value, $checked);
+		if ($inline) 
+			return $html;
 
-			case 'radio':
-				return $this->getRadioCheckedState($name, $value, $checked);
-
+		switch ($this->formType) {
+			case 'form-horizontal':
+				return 	$this->beginFormGroup().
+						$this->beginHorizontalGroup(true).
+						$html. 
+						$this->endHorizontalGroup().
+						$this->endFormGroup();
+				break;
 			default:
-				return $this->getValueAttribute($name) == $value;
+				return $html;
 		}
 	}
-
-	/**
-	 * Get the check state for a checkbox input.
-	 *
-	 * @param  string  $name
-	 * @param  mixed  $value
-	 * @param  bool  $checked
-	 * @return bool
-	 */
-	protected function getCheckboxCheckedState($name, $value, $checked)
-	{
-		if (isset($this->session) && ! $this->oldInputIsEmpty() && is_null($this->old($name))) return false;
-
-		if ($this->missingOldAndModel($name)) return $checked;
-
-		$posted = $this->getValueAttribute($name);
-
-		return is_array($posted) ? in_array($value, $posted) : (bool) $posted;
-	}
-
-	/**
-	 * Get the check state for a radio input.
-	 *
-	 * @param  string  $name
-	 * @param  mixed  $value
-	 * @param  bool  $checked
-	 * @return bool
-	 */
-	protected function getRadioCheckedState($name, $value, $checked)
-	{
-		if ($this->missingOldAndModel($name)) return $checked;
-
-		return $this->getValueAttribute($name) == $value;
-	}
-
 
 	/**
 	 * Create a HTML reset input element.
@@ -653,7 +689,8 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function submit($value = null, $options = array())
 	{
-		return $this->input('submit', null, $value, $options);
+		$options['type'] = 'submit';
+		return $this->button($value, $options);
 	}
 
 	/**
@@ -663,14 +700,59 @@ class BootstrapBuilder extends FormBuilder {
 	 * @param  array   $options
 	 * @return string
 	 */
-	public function button($value = null, $options = array())
+	public function button($value = null, $type = "default", $options = array())
 	{
 		if ( ! array_key_exists('type', $options))
 		{
 			$options['type'] = 'button';
 		}
 
-		return '<button'.$this->html->attributes($options).'>'.$value.'</button>';
+		$btn = 'btn';
+		switch ($type) {
+			case 'primary':
+				$btn .= ' btn-primary';
+				break;
+			case 'success':
+				$btn .= ' btn-success';
+				break;
+			case 'info':
+				$btn .= ' btn-info';
+				break;
+			case 'warning':
+				$btn .= ' btn-warning';
+				break;
+			case 'danger':
+				$btn .= ' btn-danger';
+				break;
+			case 'link':
+				$btn .= ' btn-link';
+				break;
+			
+			default:
+				$btn .= ' btn-default';
+				break;
+		}
+
+		if ( array_key_exists('class', $options)) {
+			$options['class'] = $btn. ' ' .$options['class'];
+		}else{
+			$options['class'] = $btn;
+		}
+
+		$html = '<button'.$this->html->attributes($options).'>'.$value.'</button>';
+
+		switch ($this->formType) {
+			case 'form-horizontal':
+				return 	$this->beginFormGroup().
+						$this->beginHorizontalGroup(true).
+						$html.
+						$this->endHorizontalGroup().
+						$this->endFormGroup();
+				break;
+			default:
+				return $html;
+		}
+		return $html;
 	}
 
 	/**
@@ -719,46 +801,6 @@ class BootstrapBuilder extends FormBuilder {
 		}
 
 		return $this->url->action($options);
-	}
-
-	/**
-	 * Get the form appendage for the given method.
-	 *
-	 * @param  string  $method
-	 * @return string
-	 */
-	protected function getAppendage($method)
-	{
-		list($method, $appendage) = array(strtoupper($method), '');
-
-		// If the HTTP method is in this list of spoofed methods, we will attach the
-		// method spoofer hidden input to the form. This allows us to use regular
-		// form to initiate PUT and DELETE requests in addition to the typical.
-		if (in_array($method, $this->spoofedMethods))
-		{
-			$appendage .= $this->hidden('_method', $method);
-		}
-
-		// If the method is something other than GET we will go ahead and attach the
-		// CSRF token to the form, as this can't hurt and is convenient to simply
-		// always have available on every form the developers creates for them.
-		if ($method != 'GET')
-		{
-			$appendage .= $this->token();
-		}
-
-		return $appendage;
-	}
-
-	/**
-	 * Transform key from array to dot syntax.
-	 *
-	 * @param  string  $key
-	 * @return string
-	 */
-	protected function transformKey($key)
-	{
-		return str_replace(array('.', '[]', '[', ']'), array('_', '', '.', ''), $key);
 	}
 
 }

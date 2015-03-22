@@ -21,9 +21,12 @@ class HtmlServiceProvider extends ServiceProvider {
 		$this->registerHtmlBuilder();
 
 		$this->registerFormBuilder();
+		
+		$this->registerBootstrapBuilder();
 
 		$this->app->alias('html', 'Collective\Html\HtmlBuilder');
 		$this->app->alias('form', 'Collective\Html\FormBuilder');
+		$this->app->alias('bootstrap', 'Collective\Html\BootstrapBuilder');
 	}
 
 	/**
@@ -55,13 +58,28 @@ class HtmlServiceProvider extends ServiceProvider {
 	}
 
 	/**
+	 * Register the bootstrap builder instance.
+	 *
+	 * @return void
+	 */
+	protected function registerBootstrapBuilder()
+	{
+		$this->app->bindShared('bootstrap', function($app)
+		{
+			$form = new BootstrapBuilder($app['html'], $app['url'], $app['session.store']->getToken());
+
+			return $form->setSessionStore($app['session.store']);
+		});
+	}
+
+	/**
 	 * Get the services provided by the provider.
 	 *
 	 * @return array
 	 */
 	public function provides()
 	{
-		return array('html', 'form');
+		return array('html', 'form', 'bootstrap');
 	}
 
 }
