@@ -1,6 +1,6 @@
 # Forms & HTML
 
-[![License](https://poser.pugx.org/leaphly/cart-bundle/license.svg)](http://opensource.org/licenses/MIT)
+[![License](https://poser.pugx.org/LaravelCollective/html/license.svg)](https://packagist.org/packages/laravelcollective/html)
 
 It is fork of popular Laravel Collective for Laravel five.
 
