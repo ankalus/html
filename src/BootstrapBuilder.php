@@ -222,7 +222,7 @@ class BootstrapBuilder extends FormBuilder {
 
 	protected function addClass($options, $class, $before = false)
 	{
-		if (array_key_exists('class', $options)) {
+		if (!is_null($options) && array_key_exists('class', $options)) {
 			if ($before) {
 				$options['class'] = $class .' '. $options['class'];
 			}else{
@@ -605,6 +605,9 @@ class BootstrapBuilder extends FormBuilder {
 			$optionsElement = array_merge($options, array('label' => $choiceLabel,'display' => 'inline'));
 			$elements .= $this->checkable('checkbox', $name, $value, $checked, $optionsElement);
 		}
+
+		$elements = '<div>' .$elements . '</div>';
+
 		return $this->formBox('checkbox' ,$name, $elements, $options);
 	}
 
@@ -633,6 +636,9 @@ class BootstrapBuilder extends FormBuilder {
 			$optionsElement = array_merge($options, array('label' => $choiceLabel,'display' => 'inline'));
 			$elements .= $this->checkable('radio', $name, $value, $checked, $optionsElement);
 		}
+
+		$elements = '<div>' .$elements . '</div>';
+
 		return $this->formBox('radio' ,$name, $elements, $options);
 	}
 
@@ -752,15 +758,17 @@ class BootstrapBuilder extends FormBuilder {
 	 * @param  array   $options
 	 * @return string
 	 */
-	public function button($value = null, $type = "default", $options = array())
+	public function button($value = null, $options = array())
 	{
 		if ( ! array_key_exists('type', $options))
 		{
 			$options['type'] = 'button';
 		}
 
+		$pattern = (isset($options['pattern'])) ? $options['pattern'] : null ;
+
 		$btn = 'btn';
-		switch ($type) {
+		switch ($pattern) {
 			case 'primary':
 				$btn .= ' btn-primary';
 				break;
@@ -783,6 +791,10 @@ class BootstrapBuilder extends FormBuilder {
 			default:
 				$btn .= ' btn-default';
 				break;
+		}
+
+		if (!is_null($pattern)) {
+			unset($options['pattern']);
 		}
 
 		$options = $this->addClass($options, $btn);
