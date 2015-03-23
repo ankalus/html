@@ -9,19 +9,15 @@ Some examples:
 {!! Bootstrap::open(array('url' => 'foo/bar', 'formType' => 'horizontal')) !!}
 {!! Bootstrap::text('test',null,array('label' => 'Laravel')) !!}
 {!! Bootstrap::number('test1',null,array('label' => 'Laravel')) !!}
+{!! Bootstrap::password('test1',array('label' => 'Laravel')) !!}
 {!! Bootstrap::checkbox('name', 'value') !!}
-{!! Bootstrap::beginFormGroup() !!}
-{!! Bootstrap::label('namea', 'Label') !!}
-{!! Bootstrap::beginHorizontalGroup() !!}
-{!! Bootstrap::radio('namea', 'value', null, array('label' => 'Leopard','display' => 'inline', 'disabled' => 'disabled')) !!}
-{!! Bootstrap::radio('namea', 'value', null, array('label' => 'Leopard','display' => 'inline', 'disabled' => 'disabled')) !!}
-{!! Bootstrap::endHorizontalGroup() !!}
-{!! Bootstrap::endFormGroup() !!}
+{!! Bootstrap::checkboxs('namea', array('value1' => 'Test1','value2' => 'Test2'), array('value1','value2'), array('label' => 'Leopard')) !!}
+{!! Bootstrap::radios('namea', array('value1' => 'Test1','value2' => 'Test2'), 'value2', array('label' => 'Leopard')) !!}
 {!! Bootstrap::select('animal', array('Cats' => array('leopard' => 'Leopard'),'Dogs' => array('spaniel' => 'Spaniel') )) !!}
 {!! Bootstrap::select('animal', array('leopard' => 'Leopard','spaniel' => 'Spaniel' )) !!}
 {!! Bootstrap::textarea("test") !!}
 {!! Bootstrap::submit("Test") !!}
-{!! Bootstrap::button("Test","primary", array('disabled' => 'disabled')) !!}
+{!! Bootstrap::button("Test", array('pattern' => 'primary', 'disabled' => 'disabled')) !!}
 {!! Bootstrap::close() !!}
 ```
 Later I will add detailed comments and documentation.
