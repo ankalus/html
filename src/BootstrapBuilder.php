@@ -596,7 +596,7 @@ class BootstrapBuilder extends FormBuilder {
 		return $this->checkable('checkbox', $name, $value, $checked, $options);
 	}
 
-	public function checkboxs($name, $choices = array(), $checkedValues = array(), $options = array())
+	public function checkboxes($name, $choices = array(), $checkedValues = array(), $options = array())
 	{
 		$elements = '';
 		foreach ($choices as $value => $choiceLabel) {
