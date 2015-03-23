@@ -237,29 +237,39 @@ class BootstrapBuilder extends FormBuilder {
 		return $options;
 	}
 
-	protected function formGroup($options = array())
+	protected function addClass($options, $class, $before = false)
 	{
 		if (array_key_exists('class', $options)) {
-			$options['class'] = "form-group " . $options['class'];
+			if ($before) {
+				$options['class'] = $class .' '. $options['class'];
+			}else{
+				$options['class'] = $options['class'] .' '. $class ;
+			}
 		}else{
-			$options['class'] = "form-group";
+			$options['class'] = $class;
 		}
 		return $options;
 	}
 
-	public function beginFormGroup($options = array())
+	protected function formGroup($options = array())
 	{
+		return $this->addClass($options, 'form-group', true);
+	}
+
+	protected function beginFormGroup($errorClass = null, $options = array())
+	{
+		$options = $this->addClass($options, $errorClass);
 		$options = $this->formGroup($options);
 		$options = $this->html->attributes($options);
 		return '<div '.$options.'>';
 	}
 
-	public function endFormGroup()
+	protected function endFormGroup()
 	{
 		return '</div>';
 	}
 
-	public function beginHorizontalGroup($margin = false)
+	protected function beginHorizontalGroup($margin = false)
 	{
 		if ($margin) {
 			return '<div class="col-sm-offset-2 col-sm-10">';
@@ -267,7 +277,7 @@ class BootstrapBuilder extends FormBuilder {
 		return '<div class="col-sm-10">';
 	}
 
-	public function endHorizontalGroup()
+	protected function endHorizontalGroup()
 	{
 		return '</div>';
 	}
@@ -288,22 +298,25 @@ class BootstrapBuilder extends FormBuilder {
 				$input =  $this->input($type , $name, $value, $inputOptions);
 				break;
 		}
+		
+		$errorClass = $this->getFieldErrorClass($name);
 
 		switch ($this->formType) {
 			case 'form-horizontal':
-				$html  = $this->beginFormGroup();
-				$html .= $label;
-				$html .= $this->beginHorizontalGroup();
-				$html .= $input;
-				$html .= $this->endFormGroup(). $this->endHorizontalGroup();
-				return $html;
+				return 	$this->beginFormGroup($errorClass).
+							 	$label.
+				 				$this->beginHorizontalGroup().
+								$input.
+								$this->getFieldError($name).
+								$this->endHorizontalGroup().
+								$this->endFormGroup();
 			
 			default:
-				$html  = $this->beginFormGroup();
-				$html .= $label;
-				$html .= $input;
-				$html .= $this->endFormGroup();
-				return $html;
+				return 	$this->beginFormGroup($errorClass).
+							 	$label.
+								$input.
+								$this->getFieldError($name).
+								$this->endFormGroup();
 		}
 	}
 
@@ -453,6 +466,8 @@ class BootstrapBuilder extends FormBuilder {
 		// assume some sane default values for these attributes for the developer.
 		$options = $this->setTextAreaSize($options);
 
+		$options = $this->formControl($options);
+
 		$options['id'] = $this->getIdAttribute($name, $options);
 
 		$value = (string) $this->getValueAttribute($name, $value);
@@ -598,6 +613,18 @@ class BootstrapBuilder extends FormBuilder {
 		return $this->checkable('checkbox', $name, $value, $checked, $options);
 	}
 
+	public function checkboxs($name, $choices = array(), $checkedValues = array(), $options = array())
+	{
+		$elements = '';
+		foreach ($choices as $value => $choiceLabel) {
+			$checked = in_array($value, (array) $checkedValues);
+
+			$optionsElement = array_merge($options, array('label' => $choiceLabel,'display' => 'inline'));
+			$elements .= $this->checkable('checkbox', $name, $value, $checked, $optionsElement);
+		}
+		return $this->formBox('checkbox' ,$name, $elements, $options);
+	}
+
 	/**
 	 * Create a radio button input field.
 	 *
@@ -612,6 +639,18 @@ class BootstrapBuilder extends FormBuilder {
 		if (is_null($value)) $value = $name;
 
 		return $this->checkable('radio', $name, $value, $checked, $options);
+	}	
+
+	public function radios($name, $choices = array(), $checkedValue = null, $options = array())
+	{
+		$elements = '';
+		foreach ($choices as $value => $choiceLabel) {
+			$checked = $value === $checkedValue;
+
+			$optionsElement = array_merge($options, array('label' => $choiceLabel,'display' => 'inline'));
+			$elements .= $this->checkable('radio', $name, $value, $checked, $optionsElement);
+		}
+		return $this->formBox('radio' ,$name, $elements, $options);
 	}
 
 	/**
@@ -643,6 +682,8 @@ class BootstrapBuilder extends FormBuilder {
 		}else{
 			$inline = '';
 		}
+
+		$error = $this->getFieldError($name);
 		
 		if ($inline) {
 			$html = '';
@@ -664,14 +705,18 @@ class BootstrapBuilder extends FormBuilder {
 
 		switch ($this->formType) {
 			case 'form-horizontal':
-				return 	$this->beginFormGroup().
+				return 	$this->beginFormGroup($this->getFieldErrorClass($name)).
 						$this->beginHorizontalGroup(true).
 						$html. 
 						$this->endHorizontalGroup().
+						$error.
 						$this->endFormGroup();
 				break;
 			default:
-				return $html;
+				if(!is_null($formGroupOptions['class'] = $this->getFieldErrorClass($name))){
+					return '<div class="' .$formGroupOptions['class']. '">'.$html.$error.'</div>';
+				}
+				return $html.$error;
 		}
 	}
 
@@ -823,6 +868,50 @@ class BootstrapBuilder extends FormBuilder {
 		}
 
 		return $this->url->action($options);
+	}
+
+	/**
+	* Get the MessageBag of errors that is populated by the
+	* validator.
+	*
+	* @return \Illuminate\Support\MessageBag
+	*/
+	protected function getErrors()
+	{
+		return $this->session->get('errors');
+	}
+
+	/**
+	* Get the first error for a given field, using the provided
+	* format, defaulting to the normal Bootstrap 3 format.
+	*
+	* @param string $field
+	* @param string $format
+	* @return mixed
+	*/
+	protected function getFieldError($field, $format = '<span class="help-block">:message</span>')
+	{
+		if ($this->getErrors()) {
+			$allErrors = $this->config->get('form.all_errors');
+			if ($allErrors) {
+				return $this->getErrors()->get($field, $format);
+			}
+
+			return $this->getErrors()->first($field, $format);
+		}
+	}
+
+	/**
+	* Return the error class if the given field has associated
+	* errors, defaulting to the normal Bootstrap 3 error class.
+	*
+	* @param string $field
+	* @param string $class
+	* @return string
+	*/
+	protected function getFieldErrorClass($field, $class = 'has-error')
+	{
+		return $this->getFieldError($field) ? $class : null;
 	}
 
 }
