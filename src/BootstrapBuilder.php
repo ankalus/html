@@ -66,12 +66,26 @@ class BootstrapBuilder extends FormBuilder {
 		return '<form'.$attributes.'>'.$append;
 	}
 
-	public function openHorizontal(array $options = array()){
+	public function openHorizontal(array $options = array())
+	{
+		if (array_key_exists('class', $options)) {
+			$options['class'] = "form-horizontal " . $options['class'];
+		}else{
+			$options['class'] = "form-horizontal";
+		}
+		
 		$this->open($options);
 	}
 
 
-	public function openInline(array $options = array()){
+	public function openInline(array $options = array())
+	{
+		if (array_key_exists('class', $options)) {
+			$options['class'] = "form-inline " . $options['class'];
+		}else{
+			$options['class'] = "form-inline";
+		}
+
 		$this->open($options);
 	}
 
