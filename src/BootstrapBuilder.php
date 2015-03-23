@@ -68,24 +68,14 @@ class BootstrapBuilder extends FormBuilder {
 
 	public function openHorizontal(array $options = array())
 	{
-		if (array_key_exists('class', $options)) {
-			$options['class'] = "form-horizontal " . $options['class'];
-		}else{
-			$options['class'] = "form-horizontal";
-		}
-		
+		$options = $this->addClass($options, 'form-horizontal');
 		$this->open($options);
 	}
 
 
 	public function openInline(array $options = array())
 	{
-		if (array_key_exists('class', $options)) {
-			$options['class'] = "form-inline " . $options['class'];
-		}else{
-			$options['class'] = "form-inline";
-		}
-
+		$options = $this->addClass($options, 'form-inline');
 		$this->open($options);
 	}
 
@@ -149,12 +139,10 @@ class BootstrapBuilder extends FormBuilder {
 
 		switch ($this->formType) {
 			case 'form-horizontal':
-				if (array_key_exists('class', $options)) {
-					$options['class'] = "col-sm-2 control-label " . $options['class'];
-				}else{
-					$options['class'] = "col-sm-2 control-label";
-				}
+				$options = $this->addClass($options, 'col-sm-2', true);
 		}
+
+		$options = $this->addClass($options, 'control-label');
 
 		$options = $this->html->attributes($options);
 
@@ -229,12 +217,7 @@ class BootstrapBuilder extends FormBuilder {
 
 	protected function formControl($options = array())
 	{
-		if (array_key_exists('class', $options)) {
-			$options['class'] = "form-control " . $options['class'];
-		}else{
-			$options['class'] = "form-control";
-		}
-		return $options;
+		return $this->addClass($options, 'form-control', true);
 	}
 
 	protected function addClass($options, $class, $before = false)
@@ -703,9 +686,11 @@ class BootstrapBuilder extends FormBuilder {
 		if ($inline) 
 			return $html;
 
+		$errorClass = $this->getFieldErrorClass($name);
+
 		switch ($this->formType) {
 			case 'form-horizontal':
-				return 	$this->beginFormGroup($this->getFieldErrorClass($name)).
+				return 	$this->beginFormGroup($errorClass).
 						$this->beginHorizontalGroup(true).
 						$html. 
 						$this->endHorizontalGroup().
@@ -713,8 +698,8 @@ class BootstrapBuilder extends FormBuilder {
 						$this->endFormGroup();
 				break;
 			default:
-				if(!is_null($formGroupOptions['class'] = $this->getFieldErrorClass($name))){
-					return '<div class="' .$formGroupOptions['class']. '">'.$html.$error.'</div>';
+				if(!is_null($errorClass)){
+					return '<div class="' .$errorClass . '">'.$html.$error.'</div>';
 				}
 				return $html.$error;
 		}
@@ -800,11 +785,7 @@ class BootstrapBuilder extends FormBuilder {
 				break;
 		}
 
-		if ( array_key_exists('class', $options)) {
-			$options['class'] = $btn. ' ' .$options['class'];
-		}else{
-			$options['class'] = $btn;
-		}
+		$options = $this->addClass($options, $btn);
 
 		$html = '<button'.$this->html->attributes($options).'>'.$value.'</button>';
 
