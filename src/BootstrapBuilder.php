@@ -624,18 +624,26 @@ class BootstrapBuilder extends FormBuilder {
 		if ($checked) $options['checked'] = 'checked';
 
 		if (array_key_exists('display',$options) && $options['display'] == 'inline') {
-			$inline = '-inline';
+			$inline = ' class="' .$type. '-inline"';
 			unset($options['display']);
 		}else{
 			$inline = '';
 		}
 		
-		$html = '<div class="' .$type.$inline.$disabled. '">';
-		$html .= '<label>';
+		if ($inline) {
+			$html = '';
+		}else{
+			$html = '<div class="' .$type.$disabled. '">';
+		}
+
+		$html .= '<label' .$inline. '>';
 		$html .= $this->input($type, $name, $value, $options);
 		$html .= $label;
 		$html .= '</label>';
-		$html .= '</div>';
+		
+		if (!$inline) {
+			$html .= '</div>';
+		}
 
 		if ($inline) 
 			return $html;
