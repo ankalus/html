@@ -22,11 +22,28 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function open(array $options = array())
 	{
-		$method = array_get($options, 'method', 'post');
-
 		$form_type = array_get($options, 'formType', NULL);
 
 		unset($options['formType']);
+
+		if (isset($options['model'])) {
+			$this->model = $options['model'];
+			unset($options['model']);
+		}
+
+		if (!is_null($this->model) && $this->model->exists) {
+			if (isset($options['update'])) {
+				$options['route'] = [$options['update'], $this->model->getKey()];
+				$options['method'] = 'PUT';
+			}
+		} else if(isset($options['store'])){
+			$options['route'] = $options['store'];
+			$options['method'] = 'POST';
+		}
+		unset($options['store']);
+		unset($options['update']);
+
+		$method = array_get($options, 'method', 'post');
 
 		// We need to extract the proper method from the attributes. If the method is
 		// something other than GET or POST we'll use POST since we will spoof the
@@ -68,15 +85,32 @@ class BootstrapBuilder extends FormBuilder {
 
 	public function openHorizontal(array $options = array())
 	{
-		$options = $this->addClass($options, 'form-horizontal');
-		$this->open($options);
+		$options['formType'] = 'horizontal';
+		return $this->open($options);
 	}
 
 
 	public function openInline(array $options = array())
 	{
-		$options = $this->addClass($options, 'form-inline');
-		$this->open($options);
+		$options['formType'] = 'inline';
+		return $this->open($options);
+	}
+
+	public function modelHorizontal($model, array $options = array())
+	{
+		$this->model = $model;
+
+		$options['formType'] = 'horizontal';
+		return $this->open($options);
+	}
+
+
+	public function modelInline($model, array $options = array())
+	{
+		$this->model = $model;
+
+		$options['formType'] = 'inline';
+		return $this->open($options);
 	}
 
 	/**
