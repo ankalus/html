@@ -100,8 +100,7 @@ class BootstrapBuilder extends FormBuilder {
 	{
 		$this->model = $model;
 
-		$options['formType'] = 'horizontal';
-		return $this->open($options);
+		return $this->openHorizontal($options);
 	}
 
 
@@ -109,8 +108,7 @@ class BootstrapBuilder extends FormBuilder {
 	{
 		$this->model = $model;
 
-		$options['formType'] = 'inline';
-		return $this->open($options);
+		return $this->openInline($options);
 	}
 
 	/**
@@ -919,12 +917,12 @@ class BootstrapBuilder extends FormBuilder {
 	protected function getFieldError($field, $format = '<span class="help-block">:message</span>')
 	{
 		if ($this->getErrors()) {
-			$allErrors = $this->config->get('form.all_errors');
-			if ($allErrors) {
-				return $this->getErrors()->get($field, $format);
+			$errors =$this->getErrors()->get($field, $format);
+			if (is_array($errors)) {
+				return implode("", $errors);
+			}else if(is_string($errors)){
+				return $errors;
 			}
-
-			return $this->getErrors()->first($field, $format);
 		}
 	}
 
