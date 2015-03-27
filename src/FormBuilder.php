@@ -598,6 +598,8 @@ class FormBuilder {
 	 */
 	public function checkbox($name, $value = 1, $checked = null, $options = array())
 	{
+		if (is_null($value)) $value = 1;
+
 		return $this->checkable('checkbox', $name, $value, $checked, $options);
 	}
 
