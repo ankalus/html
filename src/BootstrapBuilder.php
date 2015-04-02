@@ -715,6 +715,7 @@ class BootstrapBuilder extends FormBuilder {
 		}
 
 		$html .= '<label' .$inline. '>';
+		if($type=="checkbox") $html .= $this->hidden($name, 0);
 		$html .= $this->input($type, $name, $value, $options);
 		$html .= $label;
 		$html .= '</label>';
