@@ -636,7 +636,7 @@ class BootstrapBuilder extends FormBuilder {
 		foreach ($choices as $value => $choiceLabel) {
 			$checked = in_array($value, (array) $checkedValues);
 
-			$optionsElement = array_merge($options, array('label' => $choiceLabel,'display' => 'inline'));
+			$optionsElement = array_merge($options, array('label' => $choiceLabel,'display' => 'inline','hidden'=>false));
 			$elements .= $this->checkable('checkbox', $name, $value, $checked, $optionsElement);
 		}
 
@@ -693,6 +693,13 @@ class BootstrapBuilder extends FormBuilder {
 			$disabled = ' disabled';
 		}
 
+		if (isset($options['hidden'])) {
+			$hidden = ((bool)$options['hidden'])?true:false;
+			unset($options['hidden']);
+		}else{
+			$hidden = true;
+		}
+
 		$label = $this->labelCheckable($name, $this->labelGen($name, $options), $options);
 
 		$checked = $this->getCheckedState($type, $name, $value, $checked);
@@ -715,7 +722,7 @@ class BootstrapBuilder extends FormBuilder {
 		}
 
 		$html .= '<label' .$inline. '>';
-		if($type=="checkbox") $html .= $this->hidden($name, 0);
+		if($hidden && $type=="checkbox") $html .= $this->hidden($name, 0);
 		$html .= $this->input($type, $name, $value, $options);
 		$html .= $label;
 		$html .= '</label>';
