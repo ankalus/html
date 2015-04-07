@@ -460,7 +460,7 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function file($name, $options = array())
 	{
-		return $this->formBox('file' ,$name, $value, $options);
+		return $this->formBox('file' ,$name, null, $options);
 	}
 
 	/**
