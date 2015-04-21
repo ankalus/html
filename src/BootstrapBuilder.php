@@ -299,7 +299,7 @@ class BootstrapBuilder extends FormBuilder {
 
 	protected function formBox($type, $name, $value = null, $options = array())
 	{
-		$label = $this->label($name, $this->labelGen($name, $options), $options);
+		$label = $this->label($name, $this->labelGen($name, $options));
 
 		switch ($type) {
 			case 'select':			
