@@ -9,7 +9,7 @@ class BootstrapBuilder extends FormBuilder {
 
 	/**
 	 * 	Bootstrap form type.
-	 *  
+	 *
 	 * @var string
 	 */
 	protected $formType;
@@ -53,7 +53,7 @@ class BootstrapBuilder extends FormBuilder {
 		$attributes['action'] = $this->getAction($options);
 
 		$attributes['accept-charset'] = 'UTF-8';
-		
+
 		$attributes['class'] = $this->formType = $this->getFormType($form_type);
 
 		// If the method is PUT, PATCH or DELETE we will need to add a spoofer hidden
@@ -113,7 +113,7 @@ class BootstrapBuilder extends FormBuilder {
 
 	/**
 	 *	Get bootstrap form type.
-	 * 
+	 *
 	 * @param  string
 	 * @return string
 	 */
@@ -122,10 +122,10 @@ class BootstrapBuilder extends FormBuilder {
 		switch ($type) {
 			case 'horizontal':
 				return "form-horizontal";
-				
+
 			case 'inline':
 				return "form-inline";
-			
+
 			default:
 				return NULL;
 		}
@@ -301,11 +301,13 @@ class BootstrapBuilder extends FormBuilder {
 	{
 		$label = $this->label($name, $this->labelGen($name, $options));
 
+		unset($options['label']);
+
 		switch ($type) {
-			case 'select':			
-			case 'checkbox':			
-			case 'radio':			
-			case 'textarea':			
+			case 'select':
+			case 'checkbox':
+			case 'radio':
+			case 'textarea':
 				$input = $value;
 				break;
 			default:
@@ -313,7 +315,7 @@ class BootstrapBuilder extends FormBuilder {
 				$input =  $this->input($type , $name, $value, $inputOptions);
 				break;
 		}
-		
+
 		$errorClass = $this->getFieldErrorClass($name);
 
 		switch ($this->formType) {
@@ -325,7 +327,7 @@ class BootstrapBuilder extends FormBuilder {
 								$this->getFieldError($name).
 								$this->endHorizontalGroup().
 								$this->endFormGroup();
-			
+
 			default:
 				return 	$this->beginFormGroup($errorClass).
 							 	$label.
@@ -340,11 +342,11 @@ class BootstrapBuilder extends FormBuilder {
 		if (isset($options['label'])) {
 			return $options['label'];
 		}
-		
+
 		if (!is_null($this->model)) {
 			$classNameWithNamespace = get_class($this->model);
 		    $className =  snake_case( str_replace("\\", '', $classNameWithNamespace) );
-		    
+
 		    //example to translate from model Html/Bootstrap: models.html_bootstrap.text
 		    $trans = trans('models.' . $className . '.' . $name);
 
@@ -429,7 +431,7 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function date($name, $value = null, $options = array())
 	{
-		
+
 		if ($value instanceof DateTime)
 		{
 			$value = $value->format('Y-m-d');
@@ -659,7 +661,7 @@ class BootstrapBuilder extends FormBuilder {
 		if (is_null($value)) $value = $name;
 
 		return $this->checkable('radio', $name, $value, $checked, $options);
-	}	
+	}
 
 	public function radios($name, $choices = array(), $checkedValue = null, $options = array())
 	{
@@ -714,7 +716,7 @@ class BootstrapBuilder extends FormBuilder {
 		}
 
 		$error = $this->getFieldError($name);
-		
+
 		if ($inline) {
 			$html = '';
 		}else{
@@ -726,12 +728,12 @@ class BootstrapBuilder extends FormBuilder {
 		$html .= $this->input($type, $name, $value, $options);
 		$html .= $label;
 		$html .= '</label>';
-		
+
 		if (!$inline) {
 			$html .= '</div>';
 		}
 
-		if ($inline) 
+		if ($inline)
 			return $html;
 
 		$errorClass = $this->getFieldErrorClass($name);
@@ -740,7 +742,7 @@ class BootstrapBuilder extends FormBuilder {
 			case 'form-horizontal':
 				return 	$this->beginFormGroup($errorClass).
 						$this->beginHorizontalGroup(true).
-						$html. 
+						$html.
 						$this->endHorizontalGroup().
 						$error.
 						$this->endFormGroup();
@@ -829,7 +831,7 @@ class BootstrapBuilder extends FormBuilder {
 			case 'link':
 				$btn .= ' btn-link';
 				break;
-			
+
 			default:
 				$btn .= ' btn-default';
 				break;
