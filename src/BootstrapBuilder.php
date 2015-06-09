@@ -15,6 +15,13 @@ class BootstrapBuilder extends FormBuilder {
 	protected $formType;
 
 	/**
+	 * 	Bootstrap don't show labels.
+	 *
+	 * @var string
+	 */
+	protected $noLabel = false;
+
+	/**
 	 * Open up a new HTML form.
 	 *
 	 * @param  array   $options
@@ -22,6 +29,10 @@ class BootstrapBuilder extends FormBuilder {
 	 */
 	public function open(array $options = array())
 	{
+		$this->noLabel =(bool) array_get($options, 'noLabel', false);
+
+		unset($options['noLabel']);
+
 		$form_type = array_get($options, 'formType', NULL);
 
 		unset($options['formType']);
@@ -180,6 +191,7 @@ class BootstrapBuilder extends FormBuilder {
 
 		$value = e($this->formatLabel($name, $value));
 
+		if($this->noLabel) return '';
 		return '<label for="'.$name.'"'.$options.'>'.$value.'</label>';
 	}
 
